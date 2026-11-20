@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTW Dresden - SPO-Wissenstest (Fakultät WiWi)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        h1 {
+            color: #003366;
+            text-align: center;
+            font-size: 24px;
+        }
+        .intro {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .question-box {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #fafafa;
+            border-left: 4px solid #003366;
+            border-radius: 4px;
+        }
+        .question-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        button.submit-btn {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button.submit-btn:hover {
+            background-color: #002244;
+        }
+        #result {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        /* Feuerwerk / Canvas Style */
+        #fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="fireworks-canvas"></canvas>
+
+<div class="container">
+    <h1>HTW Dresden – Fakultät Wirtschaftswissenschaften</h1>
+    <div class="intro">
+        <p>Teste dein Wissen über die Studien- und Prüfungsordnungen (SPO) der aktuell immatrikulierten Studiengänge an der HTW Dresden (u. a. Betriebswirtschaft, International Management, Management mittelständischer Unternehmen, Wirtschaftsingenieurwesen).</p>
+        <p><b>Bedingung:</b> Ab 50% der Punkte (mindestens 8 von 15 Fragen) hast du bestanden – und wirst mit einem Feuerwerk belohnt!</p>
+    </div>
+
+    <form id="quizForm">
+        <!-- Dynamische Fragen -->
+        <div id="questionsContainer"></div>
+        <button type="button" class="submit-btn" onclick="evaluateQuiz()">Test auswerten</button>
+    </form>
+
+    <div id="result"></div>
+</div>
+
+<script>
+const quizData = [
+    {
+        q: "1. Welches Dokument regelt auf Basis der Prüfungsordnung Inhalt und Aufbau des Studiums im Bachelorstudiengang Betriebswirtschaft (aktuell PO/SO vom 23.01.2024)?",
+        options: [
+            "Die Immatrikulationsordnung der HTWD",
+            "Die Studienordnung für den Bachelorstudiengang Betriebswirtschaft",
+            "Das Sächsische Hochschulgesetz (SächsHSG)",
+            "Die allgemeine Bibliothekssatzung"
+        ],
+        answer: 1
+    },
+    {
+        q: "2. Wie hoch ist in der Regel der ECTS-Credit-Wert für ein einzelnes Modul im Bachelorstudiengang Betriebswirtschaft an der HTW Dresden?",
+        options: [
+            "2 ECTS Credits",
+            "3 ECTS Credits",
+            "5 ECTS Credits",
+            "10 ECTS Credits"
+        ],
+        answer: 2
+    },
+    {
+        q: "3. Was sind laut Prüfungsordnung des Bachelorstudiengangs Betriebswirtschaft Prüfungsvorleistungen (PVL)?",
+        options: [
+            "Benotete Klausuren am Ende des Semesters",
+            "Durch den Prüfer bewertete, nicht benotete individuelle Studienleistungen, deren Bestehen Voraussetzung für die Zulassung zur Modulprüfung ist",
+            "Freiwillige Zusatzaufgaben ohne jegliche Bedeutung",
+            "Die Abschlussarbeit am Ende des Studiums"
+        ],
+        answer: 1
+    },
+    {
+        q: "4. Welche Regelstudienzeit ist im Vollzeitstudium für den Bachelorstudiengang Betriebswirtschaft (W71b2024) im Regelfall vorgesehen?",
+        options: [
+            "5 Semester",
+            "6 Semester",
+            "7 Semester",
+            "8 Semester"
+        ],
+        answer: 2
+    },
+    {
+        q: "5. Wie oft dürfen nicht bestandene Modulprüfungen im Bachelor Betriebswirtschaft laut PO im Regelfall wiederholt werden und welche Frist gilt?",
+        options: [
+            "Unbegrenzt oft ohne Zeitlimit",
+            "Innerhalb eines Jahres nach Abschluss des ersten Prüfungsversuches einmal",
+            "Genau dreimal innerhalb von drei Jahren",
+            "Gar nicht, beim ersten Durchfallen ist das Studium beendet"
+        ],
+        answer: 1
+    },
+    {
+        q: "6. Welcher Masterstudiengang an der Fakultät Wirtschaftswissenschaften verzeichnet laut Übersicht unter anderem eine gültige Studien-/Änderungssatzung vom 24.06.2025 (u. a. für International Management / German Business Culture)?",
+        options: [
+            "International Management",
+            "Medizinische Informatik",
+            "Fahrzeugbau",
+            "Bauingenieurwesen"
+        ],
+        answer: 0
+    },
+    {
+        q: "7. Welcher Studiengang an der Fakultät beinhaltet spezifische Ergänzungssatzungen für ein Doppelabschlussprogramm mit Frankreich?",
+        options: [
+            "Management mittelständischer Unternehmen",
+            "Informatik",
+            "Architektur",
+            "Landwirtschaft"
+        ],
+        answer: 0
+    },
+    {
+        q: "8. Gilt die Prüfungsordnung eines Studiengangs grundsätzlich für alle dort eingeschriebenen Studierenden unabhängig davon, welcher Fakultät ein Prüfer angehört?",
+        options: [
+            "Nein, fachfremde Prüfer müssen sich an gar keine Regeln halten.",
+            "Ja, die Prüfungsordnung legt fest, dass sie für alle Prüfungen Studierender des Studiengangs gilt.",
+            "Nur nach vorheriger Genehmigung durch das sächsische Staatsministerium.",
+            "Nein, nur für Studierende ab dem 5. Fachsemester."
+        ],
+        answer: 1
+    },
+    {
+        q: "9. Welcher Status wird im Studienablaufplan für den Bachelorstudiengang Betriebswirtschaft empfohlen?",
+        options: [
+            "Eine Empfehlung an die Studierenden für einen sachgerechten Ablauf im Vollzeitmodus",
+            "Eine verbindliche Vorschrift, bei deren Abweichung sofort die Exmatrikulation droht",
+            "Ein rein historisches Dokument ohne Bedeutung",
+            "Eine Anweisung ausschließlich für Gaststudenten aus dem Ausland"
+        ],
+        answer: 0
+    },
+    {
+        q: "10. Welcher konsekutive oder spezifische Masterbereich ist im Bereich WiWi unter anderem mit dem Studiengang 'Wirtschaftsingenieurwesen' in den aktuellen Ordnungen vertreten?",
+        options: [
+            "Wirtschaftsingenieurwesen (mit Ordnungen u. a. aus 2022/2025)",
+            "Nur reine Physik-Master",
+            "Schiffbau und Meerestechnik",
+            "Holztechnik"
+        ],
+        answer: 0
+    },
+    {
+        q: "11. Wie lange nach Bekanntgabe des erstmaligen Nichtbestehens einer Modulprüfung läuft im Regelfall die Frist für die erste Wiederholung?",
+        options: [
+            "1 Monat",
+            "6 Monate",
+            "Ein Jahr",
+            "Fünf Jahre"
+        ],
+        answer: 2
+    },
+    {
+        q: "12. Wo werden offizielle Studien- und Prüfungsordnungen der HTW Dresden rechtsverbindlich bekanntgemacht?",
+        options: [
+            "Auf Instagram und TikTok",
+            "Im offiziellen Bekanntmachungsblatt der HTW Dresden",
+            "In der regionalen Tageszeitung (Dresdner Neueste Nachrichten)",
+            "Ausschließlich als Aushang am Schwarzen Brett im Mensagebäude"
+        ],
+        answer: 1
+    },
+    {
+        q: "13. Was regelt die allgemeine Immatrikulationsordnung der HTW Dresden im Zusammenspiel mit den Fakultätsordnungen?",
+        options: [
+            "Den Mensaspeiseplan",
+            "Die grundlegenden Bedingungen für die Einschreibung, Rückmeldung und den Status als Studierender an der Hochschule",
+            "Die Parkgebühren auf dem Campus",
+            "Die Raumtemperatur in den Hörsälen"
+        ],
+        answer: 1
+    },
+    {
+        q: "14. Ist die Abmeldung von zweiten Wiederholungsprüfungen laut den Prüfungsordnungen an der HTW Dresden im Regelfall gestattet?",
+        options: [
+            "Ja, das ist jederzeit bis 5 Minuten vor Beginn möglich.",
+            "Nein, die Abmeldung von zweiten Wiederholungsprüfungen ist nicht möglich.",
+            "Ja, wenn man einen Zettel vom Arzt vorlegt, unbegrenzt oft.",
+            "Nur nach Zustimmung des Bundeskanzlers."
+        ],
+        answer: 1
+    },
+    {
+        q: "15. Welche Einrichtung an der HTW Dresden beschließt Studienordnungen in der Regel auf Vorschlag des Fakultätsrates?",
+        options: [
+            "Der Allgemeine Studierendenausschuss (AStA)",
+            "Das Rektorat bzw. der Senat im Rahmen ihrer Zuständigkeiten und Genehmigungsverfahren",
+            "Der Oberbürgermeister der Stadt Dresden",
+            "Der Verwaltungsrat des Studentenwerks"
+        ],
+        answer: 1
+    }
+];
+
+function loadQuiz() {
+    const container = document.getElementById("questionsContainer");
+    let html = "";
+    quizData.forEach((item, index) => {
+        html += `<div class="question-box">
+            <div class="question-title">${item.q}</div>
+            <div class="options">`;
+        item.options.forEach((opt, oIndex) => {
+            html += `<label><input type="radio" name="q${index}" value="${oIndex}"> ${opt}</label>`;
+        });
+        html += `</div></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function evaluateQuiz() {
+    let score = 0;
+    quizData.forEach((item, index) => {
+        const selected = document.querySelector(`input[name="q${index}"]:checked`);
+        if (selected && parseInt(selected.value) === item.answer) {
+            score++;
+        }
+    });
+
+    const percent = (score / quizData.length) * 100;
+    const resultDiv = document.getElementById("result");
+    
+    if (percent >= 50) {
+        resultDiv.style.color = "green";
+        resultDiv.innerHTML = `🎉 Herzlichen Glückwunsch! Du hast ${score} von ${15} Fragen richtig (${percent.toFixed(1)}%). Du hast bestanden!`;
+        startFireworks();
+    } else {
+        resultDiv.style.color = "red";
+        resultDiv.innerHTML = `❌ Du hast ${score} von ${15} Fragen richtig (${percent.toFixed(1)}%). Leider nicht bestanden (mind. 50% erforderlich). Versuche es noch einmal!`;
+    }
+}
+
+// Einfaches Feuerwerk-Skript via Canvas
+function startFireworks() {
+    const canvas = document.getElementById("fireworks-canvas");
+    canvas.style.display = "block";
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.velocity = {
+                x: (Math.random() - 0.5) * 8,
+                y: (Math.random() - 0.5) * 8
+            };
+            this.alpha = 1;
+            this.friction = 0.95;
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 4, 0, Math.PI * 2, false);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+        update() {
+            this.velocity.x *= this.friction;
+            this.velocity.y *= this.friction;
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.alpha -= 0.01;
+        }
+    }
+
+    function createFirework() {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * (canvas.height / 2);
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        for (let i = 0; i < 50; i++) {
+            particles.push(new Particle(x, y, color));
+        }
+    }
+
+    let inter = setInterval(createFirework, 400);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((particle, index) => {
+            if (particle.alpha > 0) {
+                particle.update();
+                particle.draw();
+            } else {
+                particles.splice(index, 1);
+            }
+        });
+    }
+    animate();
+
+    setTimeout(() => {
+        clearInterval(inter);
+        setTimeout(() => { canvas.style.display = 'none'; }, 4000);
+    }, 5000);
+}
+
+window.onload = loadQuiz;
+</script>
+
+</body>
+</html>
